@@ -1,0 +1,521 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dialogHostAvalonia="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+        xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:models="using:PromoG33k.Models"
+        xmlns:vm="using:PromoG33k.ViewModels"
+        mc:Ignorable="d"
+        d:DesignWidth="1120"
+        d:DesignHeight="760"
+        x:Name="MainWindowRoot"
+        x:Class="PromoG33k.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Width="1120"
+        Height="760"
+        MinWidth="980"
+        MinHeight="650"
+        Icon="/Assets/app.ico"
+        Title="PromoG33k">
+  <Design.DataContext>
+    <vm:MainWindowViewModel />
+  </Design.DataContext>
+
+  <Window.Styles>
+    <Style Selector="Button.iconOnly">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Button.iconOnly:pointerover">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.copyOverlay">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="Background" Value="#DD07101A" />
+      <Setter Property="BorderBrush" Value="#7DBFFF" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="8" />
+    </Style>
+    <Style Selector="Border.screenshotPreview:pointerover Button.copyOverlay">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Button.copyOverlay:pointerover">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Background" Value="#EE0D2538" />
+      <Setter Property="BorderBrush" Value="#00E5FF" />
+    </Style>
+    <Style Selector="Button.used">
+      <Setter Property="Background" Value="#154C2D" />
+      <Setter Property="BorderBrush" Value="#43E37D" />
+      <Setter Property="Foreground" Value="#E8FFF0" />
+    </Style>
+    <Style Selector="Button.used:pointerover">
+      <Setter Property="Background" Value="#1D663C" />
+      <Setter Property="BorderBrush" Value="#67F59B" />
+    </Style>
+  </Window.Styles>
+
+  <Grid>
+    <Image Source="/Assets/main-window-bg.jpg"
+           Stretch="UniformToFill" />
+    <Border>
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+          <GradientStop Color="#A6040B14" Offset="0" />
+          <GradientStop Color="#74040A13" Offset="0.45" />
+          <GradientStop Color="#BA040A13" Offset="1" />
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+    <Border Background="#1800CFFF"
+            Height="260"
+            VerticalAlignment="Top"
+            Opacity="0.28" />
+
+    <dialogHostAvalonia:DialogHost x:Name="Host"
+                                   OverlayBackground="#AA02070D">
+      <Grid Margin="28"
+            RowDefinitions="Auto,*">
+        <Grid ColumnDefinitions="*,Auto"
+              Margin="0,8,0,22">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="mainHeroEyebrow"
+                       Text="GITHUB PROJECT PROMOTION QUEUE" />
+            <TextBlock Classes="mainHeroTitle"
+                       Text="PromoG33k" />
+            <TextBlock Classes="mainHeroBody"
+                       TextWrapping="Wrap">
+              <Run Text="Scan your local GitHub repos, pick a tasteful next project, then copy a draft without posting automatically." />
+            </TextBlock>
+          </StackPanel>
+
+          <StackPanel Grid.Column="1"
+                      Orientation="Horizontal"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Top"
+                      Spacing="8">
+            <Button Classes="neon"
+                    Command="{Binding RefreshRepositoriesCommand}"
+                    ToolTip.Tip="Rescan local repositories">
+              <materialIcons:MaterialIcon Width="18"
+                                          Height="18"
+                                          Kind="Refresh" />
+            </Button>
+            <Button Classes="neon"
+                    Command="{Binding OpenSettingsCommand}"
+                    ToolTip.Tip="Settings">
+              <materialIcons:MaterialIcon Width="18"
+                                          Height="18"
+                                          Kind="CogOutline" />
+            </Button>
+          </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="360,*">
+          <Border Classes="mainGlassPanel"
+                  Margin="0,0,18,0">
+            <Grid RowDefinitions="Auto,Auto,*">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="mainSectionTitle"
+                           Text="Local repos" />
+                <TextBlock Classes="mainSectionHint"
+                           Text="{Binding StatusText}"
+                           TextWrapping="Wrap" />
+                <ComboBox Margin="0,10,0,0"
+                          ItemsSource="{Binding SortModeLabels}"
+                          SelectedIndex="{Binding SortModeIndex, Mode=TwoWay}" />
+              </StackPanel>
+
+              <ProgressBar Grid.Row="1"
+                           Margin="0,14,0,0"
+                           IsIndeterminate="True"
+                           IsVisible="{Binding IsBusy}" />
+
+              <TextBlock Grid.Row="2"
+                         Margin="0,16,0,0"
+                         Classes="mainSectionHint"
+                         IsVisible="{Binding !HasRepositories}"
+                         Text="No repositories loaded yet. Open Settings and choose your local repositories folder."
+                         TextWrapping="Wrap" />
+
+              <ListBox Grid.Row="2"
+                       Margin="0,16,0,0"
+                       Background="Transparent"
+                       BorderThickness="0"
+                       IsVisible="{Binding HasRepositories}"
+                       ItemsSource="{Binding Repositories}"
+                       SelectedItem="{Binding SelectedRepository}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="models:RepositoryProfile">
+                    <Grid RowDefinitions="Auto,Auto,Auto"
+                          Margin="0,0,0,8">
+                      <TextBlock FontWeight="SemiBold"
+                                 Text="{Binding Name}" />
+                      <TextBlock Grid.Row="1"
+                                 Foreground="#B4C5D8"
+                                 Text="{Binding ShortDescription}"
+                                 TextWrapping="Wrap" />
+                      <TextBlock Grid.Row="2"
+                                 Foreground="#8298B5"
+                                 FontSize="12"
+                                 Text="{Binding UpdatedText}" />
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Grid>
+          </Border>
+
+          <ScrollViewer Grid.Column="1"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled">
+          <Grid RowDefinitions="Auto,Auto,Auto"
+                IsVisible="{Binding IsRepositoryWorkspaceVisible}">
+            <Border Classes="mainGlassPanel"
+                    IsVisible="{Binding HasSelectedRepository}">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="mainSectionTitle"
+                             Text="{Binding SelectedRepository.Name}" />
+                  <Button Padding="0"
+                          HorizontalAlignment="Left"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Command="{Binding OpenSelectedRepositoryCommand}"
+                          ToolTip.Tip="Open repository in browser">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="6">
+                      <TextBlock Foreground="#7DBFFF"
+                                 Text="{Binding SelectedRepository.GitHubUrl}"
+                                 TextDecorations="Underline" />
+                      <materialIcons:MaterialIcon Width="15"
+                                                  Height="15"
+                                                  Foreground="#7DBFFF"
+                                                  Kind="OpenInNew" />
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Top">
+                  <ComboBox Width="120"
+                            ItemsSource="{Binding PriorityLabels}"
+                            SelectedIndex="{Binding SelectedPriorityIndex, Mode=TwoWay}" />
+                  <Button Width="24"
+                          Height="24"
+                          Classes="iconOnly"
+                          Padding="0"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          ToolTip.Tip="{Binding PriorityTooltip}">
+                    <materialIcons:MaterialIcon Width="16"
+                                                Height="16"
+                                                Foreground="#7DBFFF"
+                                                Kind="InformationOutline" />
+                  </Button>
+                </StackPanel>
+
+              </Grid>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Classes="mainGlassPanel"
+                    Margin="0,18,0,0"
+                    IsVisible="{Binding HasSelectedRepository}">
+              <Grid RowDefinitions="Auto,*,Auto">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="mainSectionTitle"
+                               Text="Social Preview" />
+                    <TextBlock Classes="mainSectionHint"
+                               Text="Edit this text, then copy it into X or another social app manually." />
+                    <TextBlock Classes="mainSectionHint"
+                               IsVisible="{Binding HasSelectedRepositoryUsedText}"
+                               Text="{Binding SelectedRepositoryUsedText}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1"
+                              Orientation="Horizontal"
+                              Spacing="6"
+                              VerticalAlignment="Center">
+                    <Button Width="38"
+                            Height="38"
+                            Classes="neon"
+                            Command="{Binding GenerateDraftCommand}"
+                            ToolTip.Tip="Generate social preview">
+                      <materialIcons:MaterialIcon Width="20"
+                                                  Height="20"
+                                                  Kind="AutoAwesome" />
+                    </Button>
+                    <Button Width="38"
+                            Height="38"
+                            Classes="neon"
+                            Command="{Binding GenerateDraftWithInstructionCommand}"
+                            ToolTip.Tip="Generate with extra instruction">
+                      <materialIcons:MaterialIcon Width="20"
+                                                  Height="20"
+                                                  Kind="TextBoxEditOutline" />
+                    </Button>
+                    <Button Classes="neon"
+                            IsVisible="{Binding !IsSelectedRepositoryDraftUsed}"
+                            Command="{Binding MarkSelectedDraftAsUsedCommand}"
+                            ToolTip.Tip="Mark this social preview as used">
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="6">
+                        <materialIcons:MaterialIcon Width="18"
+                                                    Height="18"
+                                                    Kind="CheckCircleOutline" />
+                        <TextBlock Text="Used" />
+                      </StackPanel>
+                    </Button>
+                    <Button Classes="used"
+                            IsVisible="{Binding IsSelectedRepositoryDraftUsed}"
+                            Command="{Binding MarkSelectedDraftAsUsedCommand}"
+                            ToolTip.Tip="This social preview has been marked as used">
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="6">
+                        <materialIcons:MaterialIcon Width="18"
+                                                    Height="18"
+                                                    Kind="CheckCircle" />
+                        <TextBlock Text="Used" />
+                      </StackPanel>
+                    </Button>
+                    <Button Width="38"
+                            Height="38"
+                            Classes="iconOnly"
+                            Padding="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding CopyDraftCommand}"
+                            ToolTip.Tip="Copy draft to clipboard">
+                      <materialIcons:MaterialIcon Width="22"
+                                                  Height="22"
+                                                  Foreground="#7DBFFF"
+                                                  Kind="ContentCopy" />
+                    </Button>
+                  </StackPanel>
+                </Grid>
+
+                <TextBox Grid.Row="1"
+                         Margin="0,12,0,0"
+                         MinHeight="145"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Text="{Binding DraftText, Mode=TwoWay}" />
+
+                <Grid Grid.Row="2"
+                      Margin="0,12,0,0"
+                      ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="1"
+                              Orientation="Horizontal"
+                              Spacing="8"
+                              HorizontalAlignment="Right">
+                    <ComboBox MinWidth="190"
+                              ItemsSource="{Binding PostStyleLabels}"
+                              SelectedIndex="{Binding SelectedPostStyleIndex, Mode=TwoWay}" />
+                    <Button Width="34"
+                            Height="34"
+                            Classes="iconOnly"
+                            Padding="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ToolTip.Tip="{Binding PostStyleTooltip}">
+                      <materialIcons:MaterialIcon Width="16"
+                                                  Height="16"
+                                                  Foreground="#7DBFFF"
+                                                  Kind="InformationOutline" />
+                    </Button>
+                  </StackPanel>
+                </Grid>
+              </Grid>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Classes="mainGlassPanel"
+                    Margin="0,18,0,0"
+                    IsVisible="{Binding HasSelectedRepository}">
+              <Grid RowDefinitions="Auto,*">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="mainSectionTitle"
+                             Text="Screenshots" />
+                  <TextBlock Classes="mainSectionHint"
+                             Text="{Binding SelectedRepository.ScreenshotSummary}"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+
+                <ItemsControl Grid.Row="1"
+                              Margin="0,14,0,0"
+                              ItemsSource="{Binding SelectedScreenshotPreviews}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ScreenshotPreviewViewModel">
+                      <Border Background="#AA0E1A2B"
+                              BorderBrush="#2A3A60"
+                              BorderThickness="1"
+                              CornerRadius="6"
+                              Padding="10"
+                              Margin="0,0,0,8"
+                              Classes="screenshotPreview">
+                        <Grid RowDefinitions="Auto,Auto">
+                          <Grid>
+                            <Image Source="{Binding Image}"
+                                   MaxHeight="260"
+                                   Stretch="Uniform" />
+                            <Button Classes="copyOverlay"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="10"
+                                    CornerRadius="6"
+                                    Click="OnScreenshotCopyButtonClick"
+                                    ToolTip.Tip="Copy image data to clipboard">
+                              <materialIcons:MaterialIcon Width="22"
+                                                          Height="22"
+                                                          Foreground="#7DBFFF"
+                                                          Kind="ContentCopy" />
+                            </Button>
+                          </Grid>
+                          <TextBlock Grid.Row="1"
+                                     Margin="0,8,0,0"
+                                     Classes="mainSectionHint"
+                                     Text="{Binding StatusText}"
+                                     TextWrapping="Wrap" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Grid>
+            </Border>
+          </Grid>
+          </ScrollViewer>
+
+          <ScrollViewer Grid.Column="1"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled"
+                        IsVisible="{Binding IsSettingsOpen}">
+            <Border Classes="mainGlassPanel">
+              <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="mainSectionTitle"
+                               Text="Settings" />
+                    <TextBlock Classes="mainSectionHint"
+                               Text="Configure the local repo folder and AI generation settings PromoG33k should use." />
+                  </StackPanel>
+                  <Button Grid.Column="1"
+                          Width="34"
+                          Height="34"
+                          Classes="iconOnly"
+                          Padding="0"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Command="{Binding CloseSettingsCommand}"
+                          ToolTip.Tip="Close settings">
+                    <materialIcons:MaterialIcon Width="20"
+                                                Height="20"
+                                                Foreground="#7DBFFF"
+                                                Kind="Close" />
+                  </Button>
+                </Grid>
+
+                <StackPanel Grid.Row="1"
+                            Margin="0,20,0,0"
+                            Spacing="8">
+                  <TextBlock Classes="mainSectionHint"
+                             Text="Local repositories folder" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Watermark="/Users/name/Documents/Source/Repos"
+                             Text="{Binding SettingsLocalRepositoryRootPath, Mode=TwoWay}" />
+                    <Button Grid.Column="1"
+                            Margin="8,0,0,0"
+                            Classes="neon"
+                            Command="{Binding BrowseLocalRepositoryRootCommand}"
+                            ToolTip.Tip="Choose folder">
+                      <materialIcons:MaterialIcon Width="18"
+                                                  Height="18"
+                                                  Kind="FolderOpenOutline" />
+                    </Button>
+                  </Grid>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2"
+                            Margin="0,18,0,0"
+                            Spacing="8">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="mainSectionHint"
+                               VerticalAlignment="Center"
+                               Text="OpenAI API key" />
+                    <Button Grid.Column="1"
+                            Padding="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding OpenOpenAiApiKeysCommand}"
+                            ToolTip.Tip="Open OpenAI API keys page">
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="6">
+                        <TextBlock Foreground="#7DBFFF"
+                                   Text="Get key"
+                                   TextDecorations="Underline" />
+                        <materialIcons:MaterialIcon Width="15"
+                                                    Height="15"
+                                                    Foreground="#7DBFFF"
+                                                    Kind="OpenInNew" />
+                      </StackPanel>
+                    </Button>
+                  </Grid>
+                  <TextBox Watermark="sk-..."
+                           Text="{Binding SettingsOpenAiApiKey, Mode=TwoWay}" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="3"
+                            Margin="0,18,0,0"
+                            Spacing="8">
+                  <TextBlock Classes="mainSectionHint"
+                             Text="OpenAI model" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Watermark="gpt-5.4-mini"
+                             Text="{Binding SettingsOpenAiModel, Mode=TwoWay}" />
+                    <Button Grid.Column="1"
+                            Margin="8,0,0,0"
+                            Classes="neon"
+                            Command="{Binding TestOpenAiCommand}"
+                            ToolTip.Tip="Test OpenAI connection">
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="6">
+                        <materialIcons:MaterialIcon Width="18"
+                                                    Height="18"
+                                                    Kind="LightningBoltOutline" />
+                        <TextBlock Text="Test AI" />
+                      </StackPanel>
+                    </Button>
+                  </Grid>
+                </StackPanel>
+
+                <UniformGrid Grid.Row="4"
+                             Columns="2"
+                             Margin="0,26,0,0"
+                             HorizontalAlignment="Right"
+                             MinWidth="240">
+                  <Button Content="Cancel"
+                          Classes="neon"
+                          Margin="0,0,4,0"
+                          MinWidth="112"
+                          Command="{Binding CloseSettingsCommand}" />
+                  <Button Content="Save"
+                          Classes="accent"
+                          Margin="4,0,0,0"
+                          MinWidth="112"
+                          Command="{Binding SaveSettingsCommand}" />
+                </UniformGrid>
+              </Grid>
+            </Border>
+          </ScrollViewer>
+        </Grid>
+      </Grid>
+    </dialogHostAvalonia:DialogHost>
+  </Grid>
+</Window>

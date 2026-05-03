@@ -1,0 +1,27 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dialogHostAvalonia="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+             xmlns:local="using:PromoG33k"
+             xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:viewModels="using:PromoG33k.ViewModels"
+             x:Class="PromoG33k.App"
+             x:DataType="viewModels:AppViewModel"
+             Name="PromoG33k"
+             RequestedThemeVariant="Dark">
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
+  <Application.Styles>
+    <materialIcons:MaterialIconStyles />
+    <FluentTheme />
+    <dialogHostAvalonia:DialogHostStyles />
+    <StyleInclude Source="/Views/Styles/SharedGlassTheme.axaml" />
+  </Application.Styles>
+
+  <NativeMenu.Menu>
+    <NativeMenu>
+      <NativeMenuItem Header="About PromoG33k" Command="{CompiledBinding AboutCommand}" />
+    </NativeMenu>
+  </NativeMenu.Menu>
+</Application>

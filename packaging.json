@@ -1,0 +1,24 @@
+{
+  "ProductName": "PromoG33k",
+  "CompanyName": "Dean Edis (DeanTheCoder)",
+  "PublisherUrl": "https://github.com/deanthecoder",
+  "BundleIdentifier": "com.deanthecoder.promog33k",
+  "Executable": "PromoG33k",
+  "Project": "PromoG33k.csproj",
+  "Version": "0.1",
+  "Win": {
+    "InnoScript": "Installer/templates/inno.iss",
+    "IconIco": "Assets/app.ico",
+    "GUID": "{2a746294-e619-493a-bb01-6ed2cc07905f}",
+    "RuntimeIdentifier": "win-x64",
+    "InstallOpenAL": false
+  },
+  "Mac": {
+    "RuntimeIdentifiers": [
+      "osx-arm64",
+      "osx-x64"
+    ],
+    "IconIcns": "",
+    "InfoPlist": "Installer/templates/Info.plist"
+  }
+}
