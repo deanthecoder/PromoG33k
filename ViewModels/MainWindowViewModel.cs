@@ -114,6 +114,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasSelectedRepositoryUsedText));
             OnPropertyChanged(nameof(IsSelectedRepositoryDraftUsed));
             OnPropertyChanged(nameof(SelectedPriorityIndex));
+            RaiseSelectedRepositoryCommandCanExecuteChanged();
             _ = LoadScreenshotPreviewsAsync(value);
         }
     }
@@ -388,14 +389,22 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private async Task TestOpenAiAsync()
     {
-        if (!await EnsureOpenAiKeyAsync())
+        var apiKey = SettingsOpenAiApiKey?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            if (!IsSettingsOpen)
+                OpenSettings();
+            StatusText = "Add an OpenAI API key in Settings first.";
             return;
+        }
+
+        var model = string.IsNullOrWhiteSpace(SettingsOpenAiModel) ? "gpt-5.4-mini" : SettingsOpenAiModel.Trim();
 
         IsBusy = true;
         StatusText = "Testing OpenAI connection...";
         try
         {
-            var isConnected = await m_openAiPostGenerationService.TestConnectionAsync(m_settings.GetOpenAiApiKey(), m_settings.OpenAiModel);
+            var isConnected = await m_openAiPostGenerationService.TestConnectionAsync(apiKey, model);
             StatusText = isConnected ? "OpenAI connection OK." : "OpenAI responded, but the test reply was unexpected.";
         }
         catch (Exception exception) when (exception is HttpRequestException or ArgumentException or TaskCanceledException)
@@ -612,6 +621,14 @@ public sealed class MainWindowViewModel : ViewModelBase
         SettingsLocalRepositoryRootPath = m_settings.LocalRepositoryRootPath;
         SettingsOpenAiApiKey = m_settings.GetOpenAiApiKey();
         SettingsOpenAiModel = m_settings.OpenAiModel;
+    }
+
+    private void RaiseSelectedRepositoryCommandCanExecuteChanged()
+    {
+        (GenerateDraftCommand as CommandBase)?.RaiseCanExecuteChanged();
+        (GenerateDraftWithInstructionCommand as CommandBase)?.RaiseCanExecuteChanged();
+        (MarkSelectedDraftAsUsedCommand as CommandBase)?.RaiseCanExecuteChanged();
+        (OpenSelectedRepositoryCommand as CommandBase)?.RaiseCanExecuteChanged();
     }
 
     private async Task<byte[]> LoadImageBytesAsync(string imageLocation)

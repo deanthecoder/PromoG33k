@@ -429,7 +429,7 @@
                              Text="Local repositories folder" />
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBox Watermark="/Users/name/Documents/Source/Repos"
-                             Text="{Binding SettingsLocalRepositoryRootPath, Mode=TwoWay}" />
+                             Text="{Binding SettingsLocalRepositoryRootPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Grid.Column="1"
                             Margin="8,0,0,0"
                             Classes="neon"
@@ -468,7 +468,7 @@
                     </Button>
                   </Grid>
                   <TextBox Watermark="sk-..."
-                           Text="{Binding SettingsOpenAiApiKey, Mode=TwoWay}" />
+                           Text="{Binding SettingsOpenAiApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="3"
@@ -478,7 +478,7 @@
                              Text="OpenAI model" />
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBox Watermark="gpt-5.4-mini"
-                             Text="{Binding SettingsOpenAiModel, Mode=TwoWay}" />
+                             Text="{Binding SettingsOpenAiModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Grid.Column="1"
                             Margin="8,0,0,0"
                             Classes="neon"
