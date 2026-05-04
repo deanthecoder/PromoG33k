@@ -31,6 +31,7 @@ public sealed class MainWindowViewModelTests
             new ClipboardService(),
             new PromotionScoreService(),
             new LocalRepositoryScanner(),
+            new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
             new OpenAiPostGenerationService(),
             settings);
 
@@ -60,6 +61,7 @@ public sealed class MainWindowViewModelTests
             new ClipboardService(),
             new PromotionScoreService(),
             new LocalRepositoryScanner(),
+            new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
             new OpenAiPostGenerationService(new HttpClient(handler)),
             settings)
         {
@@ -92,5 +94,15 @@ public sealed class MainWindowViewModelTests
                 Content = new StringContent("""{"output_text":"OK"}""")
             };
         }
+    }
+
+    private sealed class StaticHtmlHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("<html></html>")
+                });
     }
 }

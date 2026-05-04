@@ -39,6 +39,8 @@ public sealed class RepositoryProfile
     public bool HasReadme { get; set; }
     public bool ReadmeMentionsLicense { get; set; }
     public bool IsEmptyRepository { get; set; }
+    public bool? HasGitHubSocialPreviewImage { get; set; }
+    public string GitHubSocialPreviewImageUrl { get; set; } = string.Empty;
     public string Language { get; set; } = string.Empty;
     public int StargazersCount { get; set; }
     public string SocialPreviewText { get; set; } = string.Empty;
@@ -62,6 +64,8 @@ public sealed class RepositoryProfile
                 warnings.Add("README does not mention a license.");
             if (ScreenshotUrls.Count == 0)
                 warnings.Add("No screenshots found.");
+            if (HasGitHubSocialPreviewImage == false)
+                warnings.Add("No custom GitHub social preview image set.");
             return warnings;
         }
     }

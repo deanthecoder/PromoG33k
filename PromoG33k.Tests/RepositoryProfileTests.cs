@@ -43,12 +43,14 @@ public class RepositoryProfileTests
         {
             HasReadme = true,
             ReadmeMentionsLicense = false,
+            HasGitHubSocialPreviewImage = false,
             ScreenshotUrls = []
         };
 
         Assert.That(repository.HasReadinessWarnings, Is.True);
         Assert.That(repository.ReadinessWarningText, Does.Contain("README does not mention a license."));
         Assert.That(repository.ReadinessWarningText, Does.Contain("No screenshots found."));
+        Assert.That(repository.ReadinessWarningText, Does.Contain("No custom GitHub social preview image set."));
     }
 
     [Test]

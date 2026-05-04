@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using DTC.Core.Commands;
@@ -38,6 +39,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     private readonly ClipboardService m_clipboardService;
     private readonly PromotionScoreService m_promotionScoreService;
     private readonly LocalRepositoryScanner m_localRepositoryScanner;
+    private readonly GitHubSocialPreviewService m_gitHubSocialPreviewService;
     private readonly OpenAiPostGenerationService m_openAiPostGenerationService;
     private readonly AppSettings m_settings;
     private readonly HttpClient m_imageHttpClient = new HttpClient();
@@ -57,6 +59,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             new ClipboardService(),
             new PromotionScoreService(),
             new LocalRepositoryScanner(),
+            new GitHubSocialPreviewService(),
             new OpenAiPostGenerationService(),
             AppSettings.Instance)
     {
@@ -66,12 +69,14 @@ public sealed class MainWindowViewModel : ViewModelBase
         ClipboardService clipboardService,
         PromotionScoreService promotionScoreService,
         LocalRepositoryScanner localRepositoryScanner,
+        GitHubSocialPreviewService gitHubSocialPreviewService,
         OpenAiPostGenerationService openAiPostGenerationService,
         AppSettings settings)
     {
         m_clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
         m_promotionScoreService = promotionScoreService ?? throw new ArgumentNullException(nameof(promotionScoreService));
         m_localRepositoryScanner = localRepositoryScanner ?? throw new ArgumentNullException(nameof(localRepositoryScanner));
+        m_gitHubSocialPreviewService = gitHubSocialPreviewService ?? throw new ArgumentNullException(nameof(gitHubSocialPreviewService));
         m_openAiPostGenerationService = openAiPostGenerationService ?? throw new ArgumentNullException(nameof(openAiPostGenerationService));
         m_settings = settings ?? throw new ArgumentNullException(nameof(settings));
         CopyDraftCommand = new AsyncRelayCommand(_ => CopyDraftAsync());
@@ -291,13 +296,13 @@ public sealed class MainWindowViewModel : ViewModelBase
         StatusText = "Choose your local repositories folder in Settings to load promotable projects.";
     }
 
-    private Task LoadRepositoriesAsync()
+    private async Task LoadRepositoriesAsync()
     {
         if (string.IsNullOrWhiteSpace(m_settings.LocalRepositoryRootPath))
         {
             OpenSettings();
             StatusText = "Choose your local repositories folder in Settings first.";
-            return Task.CompletedTask;
+            return;
         }
 
         IsBusy = true;
@@ -317,8 +322,18 @@ public sealed class MainWindowViewModel : ViewModelBase
                     StringComparer.OrdinalIgnoreCase) ??
                 new Dictionary<string, (string SocialPreviewText, RepositoryPriority Priority)>(StringComparer.OrdinalIgnoreCase);
 
+            var scannedRepositories = m_localRepositoryScanner
+                .GetRepositories(new DirectoryInfo(m_settings.LocalRepositoryRootPath))
+                .ToArray();
+
+            if (scannedRepositories.Length > 0)
+            {
+                StatusText = "Checking GitHub social preview images...";
+                await EnrichGitHubSocialPreviewReadinessAsync(scannedRepositories);
+            }
+
             Repositories.Clear();
-            foreach (var repository in m_localRepositoryScanner.GetRepositories(new DirectoryInfo(m_settings.LocalRepositoryRootPath)))
+            foreach (var repository in scannedRepositories)
             {
                 if (previousState.TryGetValue(repository.GitHubUrl, out var state))
                 {
@@ -345,8 +360,32 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
 
-        return Task.CompletedTask;
+    private async Task EnrichGitHubSocialPreviewReadinessAsync(IReadOnlyCollection<RepositoryProfile> repositories)
+    {
+        using var semaphore = new SemaphoreSlim(6);
+        await Task.WhenAll(
+            repositories.Select(
+                async repository =>
+                {
+                    await semaphore.WaitAsync();
+                    try
+                    {
+                        var preview = await m_gitHubSocialPreviewService.CheckAsync(repository.GitHubUrl);
+                        repository.HasGitHubSocialPreviewImage = preview.HasCustomImage;
+                        repository.GitHubSocialPreviewImageUrl = preview.ImageUrl;
+                    }
+                    catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or InvalidOperationException)
+                    {
+                        repository.HasGitHubSocialPreviewImage = null;
+                        repository.GitHubSocialPreviewImageUrl = string.Empty;
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
     }
 
     private async Task CopyDraftAsync()
