@@ -153,8 +153,26 @@
                   <DataTemplate x:DataType="models:RepositoryProfile">
                     <Grid RowDefinitions="Auto,Auto,Auto"
                           Margin="0,0,0,8">
-                      <TextBlock FontWeight="SemiBold"
-                                 Text="{Binding Name}" />
+                      <StackPanel Orientation="Horizontal"
+                                  Spacing="6">
+                        <TextBlock FontWeight="SemiBold"
+                                   Text="{Binding Name}" />
+                        <Border Width="16"
+                                Height="16"
+                                CornerRadius="8"
+                                Background="#33FFD166"
+                                BorderBrush="#D7A51E"
+                                BorderThickness="1"
+                                IsVisible="{Binding HasReadinessWarnings}"
+                                ToolTip.Tip="{Binding ReadinessWarningText}">
+                          <TextBlock HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
+                                     FontSize="11"
+                                     FontWeight="Bold"
+                                     Foreground="#FFE39A"
+                                     Text="!" />
+                        </Border>
+                      </StackPanel>
                       <TextBlock Grid.Row="1"
                                  Foreground="#B4C5D8"
                                  Text="{Binding ShortDescription}"

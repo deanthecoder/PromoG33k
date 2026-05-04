@@ -59,7 +59,7 @@ public class ReadmeMediaExtractorTests
             var screenshotPath = Path.Combine(root.FullName, "img", "ReviewG33k.png");
             File.WriteAllText(screenshotPath, "not a real image");
             const string readme = """
-                ![Main window screenshot](img/ReviewG33k.png)
+                ![Main window screenshot](img/ReviewG33k.png?raw=true "Main window screenshot")
                 ![Logo](img/logo.png)
                 """;
             var extractor = new ReadmeMediaExtractor();

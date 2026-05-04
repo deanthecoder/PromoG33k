@@ -46,6 +46,7 @@ public class LocalRepositoryScannerTests
                 - Review Bitbucket pull requests.
                 - Review local committed changes.
                 ![Main window screenshot](img/ReviewG33k.png)
+                Licensed under the MIT License.
                 """);
             File.WriteAllText(Path.Combine(repositoryDirectory.FullName, "Program.cs"), "class Program { }");
             File.WriteAllText(
@@ -71,6 +72,10 @@ public class LocalRepositoryScannerTests
             Assert.That(
                 repositories[0].ReadmeHighlights,
                 Is.EqualTo(new[] { "Review Bitbucket pull requests.", "Review local committed changes." }));
+            Assert.That(repositories[0].HasReadme, Is.True);
+            Assert.That(repositories[0].ReadmeMentionsLicense, Is.True);
+            Assert.That(repositories[0].IsEmptyRepository, Is.False);
+            Assert.That(repositories[0].HasReadinessWarnings, Is.False);
             Assert.That(repositories[0].Language, Is.EqualTo("C#"));
             Assert.That(repositories[0].IsAvaloniaProject, Is.True);
             Assert.That(repositories[0].IsCrossPlatform, Is.True);
@@ -93,6 +98,30 @@ public class LocalRepositoryScannerTests
             var repositories = scanner.GetRepositories(root);
 
             Assert.That(repositories, Is.Empty);
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
+    [Test]
+    public void GetRepositoriesFlagsEmptyReposWithoutReadmeOrScreenshots()
+    {
+        var root = Directory.CreateTempSubdirectory();
+        try
+        {
+            CreateRepository(root, "EmptyTool", "https://github.com/deanthecoder/EmptyTool.git");
+            var scanner = new LocalRepositoryScanner();
+
+            var repositories = scanner.GetRepositories(root);
+
+            Assert.That(repositories, Has.Count.EqualTo(1));
+            Assert.That(repositories[0].IsEmptyRepository, Is.True);
+            Assert.That(repositories[0].HasReadme, Is.False);
+            Assert.That(repositories[0].ReadinessWarningText, Does.Contain("Repository appears empty."));
+            Assert.That(repositories[0].ReadinessWarningText, Does.Contain("No README found."));
+            Assert.That(repositories[0].ReadinessWarningText, Does.Contain("No screenshots found."));
         }
         finally
         {

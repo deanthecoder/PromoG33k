@@ -101,6 +101,7 @@ public sealed class LocalRepositoryScanner
         var readmeFile = GetReadmeFile(repositoryDirectory);
         var readmeText = readmeFile?.Exists == true ? File.ReadAllText(readmeFile.FullName) : string.Empty;
         var isAvaloniaProject = IsAvaloniaProject(repositoryDirectory);
+        var hasReadme = !string.IsNullOrWhiteSpace(readmeText);
         return new RepositoryProfile
         {
             Name = repositoryName,
@@ -114,6 +115,9 @@ public sealed class LocalRepositoryScanner
             ScreenshotUrls = m_readmeMediaExtractor.ExtractScreenshotPaths(readmeText, repositoryDirectory).ToList(),
             ReadmeHeadings = ExtractReadmeHeadings(readmeText).ToList(),
             ReadmeHighlights = ExtractReadmeHighlights(readmeText).ToList(),
+            HasReadme = hasReadme,
+            ReadmeMentionsLicense = hasReadme && MentionsLicense(readmeText),
+            IsEmptyRepository = IsEmptyRepository(repositoryDirectory),
             Language = DetectPrimaryLanguage(repositoryDirectory),
             IsAvaloniaProject = isAvaloniaProject,
             IsCrossPlatform = isAvaloniaProject || MentionsCrossPlatform(readmeText)
@@ -294,6 +298,16 @@ public sealed class LocalRepositoryScanner
                readmeText.Contains("Windows and Linux", StringComparison.OrdinalIgnoreCase) ||
                readmeText.Contains("macOS and Linux", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static bool MentionsLicense(string readmeText) =>
+        !string.IsNullOrWhiteSpace(readmeText) &&
+        (readmeText.Contains("license", StringComparison.OrdinalIgnoreCase) ||
+         readmeText.Contains("licence", StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsEmptyRepository(DirectoryInfo repositoryDirectory) =>
+        !repositoryDirectory
+            .EnumerateFileSystemInfos("*", SearchOption.TopDirectoryOnly)
+            .Any(item => !item.Name.Equals(".git", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsSourceFile(FileInfo file) =>
         !file.FullName.Contains($"{Path.DirectorySeparatorChar}.git{Path.DirectorySeparatorChar}", StringComparison.Ordinal) &&

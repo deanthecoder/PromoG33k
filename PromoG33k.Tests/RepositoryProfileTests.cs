@@ -35,4 +35,32 @@ public class RepositoryProfileTests
 
         Assert.That(repository.ShortDescription, Is.EqualTo("Short description."));
     }
+
+    [Test]
+    public void ReadinessWarningsDescribeMissingSharingSignals()
+    {
+        var repository = new RepositoryProfile
+        {
+            HasReadme = true,
+            ReadmeMentionsLicense = false,
+            ScreenshotUrls = []
+        };
+
+        Assert.That(repository.HasReadinessWarnings, Is.True);
+        Assert.That(repository.ReadinessWarningText, Does.Contain("README does not mention a license."));
+        Assert.That(repository.ReadinessWarningText, Does.Contain("No screenshots found."));
+    }
+
+    [Test]
+    public void ReadinessWarningsDoNotDuplicateLicenseWarningWhenReadmeIsMissing()
+    {
+        var repository = new RepositoryProfile
+        {
+            HasReadme = false,
+            ReadmeMentionsLicense = false
+        };
+
+        Assert.That(repository.ReadinessWarningText, Does.Contain("No README found."));
+        Assert.That(repository.ReadinessWarningText, Does.Not.Contain("license"));
+    }
 }

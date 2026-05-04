@@ -36,6 +36,9 @@ public sealed class RepositoryProfile
     public List<string> Topics { get; set; } = [];
     public List<string> ReadmeHeadings { get; set; } = [];
     public List<string> ReadmeHighlights { get; set; } = [];
+    public bool HasReadme { get; set; }
+    public bool ReadmeMentionsLicense { get; set; }
+    public bool IsEmptyRepository { get; set; }
     public string Language { get; set; } = string.Empty;
     public int StargazersCount { get; set; }
     public string SocialPreviewText { get; set; } = string.Empty;
@@ -44,6 +47,26 @@ public sealed class RepositoryProfile
 
     public bool IsExcluded => Priority == RepositoryPriority.Excluded;
     public bool HasMedia => ScreenshotUrls.Count > 0 || DemoUrls.Count > 0;
+    public bool HasReadinessWarnings => ReadinessWarnings.Count > 0;
+
+    public IReadOnlyList<string> ReadinessWarnings
+    {
+        get
+        {
+            var warnings = new List<string>();
+            if (IsEmptyRepository)
+                warnings.Add("Repository appears empty.");
+            if (!HasReadme)
+                warnings.Add("No README found.");
+            else if (!ReadmeMentionsLicense)
+                warnings.Add("README does not mention a license.");
+            if (ScreenshotUrls.Count == 0)
+                warnings.Add("No screenshots found.");
+            return warnings;
+        }
+    }
+
+    public string ReadinessWarningText => string.Join(Environment.NewLine, ReadinessWarnings);
 
     public string PromotionMaterialSummary
     {

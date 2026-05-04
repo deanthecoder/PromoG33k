@@ -117,7 +117,7 @@ public sealed class ReadmeMediaExtractor
         if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
             return uri.IsFile ? uri.LocalPath : string.Empty;
 
-        url = url.TrimStart('/');
+        url = StripQueryAndFragment(url).TrimStart('/');
         return Path.GetFullPath(Path.Combine(repositoryDirectory.FullName, url.Replace('/', Path.DirectorySeparatorChar)));
     }
 
