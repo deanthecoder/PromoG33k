@@ -78,6 +78,41 @@ public sealed class MainWindowViewModelTests
         Assert.That(settings.OpenAiModel, Is.EqualTo("gpt-saved"));
     }
 
+    [Test]
+    public void ChangingSelectedPriorityRefreshesRepositoryListOrder()
+    {
+        var lowPriorityRepository = new RepositoryProfile
+        {
+            Name = "LowPriority",
+            GitHubUrl = "https://github.com/example/LowPriority",
+            Priority = RepositoryPriority.Normal
+        };
+        var selectedRepository = new RepositoryProfile
+        {
+            Name = "Selected",
+            GitHubUrl = "https://github.com/example/Selected",
+            Priority = RepositoryPriority.Normal
+        };
+        var settings = new AppSettings
+        {
+            Repositories = [lowPriorityRepository, selectedRepository],
+            PromotionHistory = []
+        };
+        var viewModel = new MainWindowViewModel(
+            new ClipboardService(),
+            new PromotionScoreService(),
+            new LocalRepositoryScanner(),
+            new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
+            new OpenAiPostGenerationService(),
+            settings);
+        viewModel.SelectedRepository = selectedRepository;
+
+        viewModel.SelectedPriorityIndex = 0;
+
+        Assert.That(viewModel.Repositories.Select(repository => repository.Name).ToArray(), Is.EqualTo(new[] { "Selected", "LowPriority" }));
+        Assert.That(viewModel.SelectedRepository, Is.SameAs(selectedRepository));
+    }
+
     private sealed class CapturingHttpMessageHandler : HttpMessageHandler
     {
         public TaskCompletionSource RequestCaptured { get; } = new();

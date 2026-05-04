@@ -177,6 +177,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             OnPropertyChanged();
             SaveRepositoryState();
             StatusText = $"{SelectedRepository.Name} priority set to {priority}.";
+            ApplyRepositorySort();
         }
     }
 
