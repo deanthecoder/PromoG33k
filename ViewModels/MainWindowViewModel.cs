@@ -36,11 +36,12 @@ namespace PromoG33k.ViewModels;
 /// </remarks>
 public sealed class MainWindowViewModel : ViewModelBase
 {
-    private readonly ClipboardService m_clipboardService;
+    private readonly IClipboardService m_clipboardService;
     private readonly PromotionScoreService m_promotionScoreService;
     private readonly LocalRepositoryScanner m_localRepositoryScanner;
     private readonly GitHubSocialPreviewService m_gitHubSocialPreviewService;
     private readonly OpenAiPostGenerationService m_openAiPostGenerationService;
+    private readonly ProjectSummaryService m_projectSummaryService;
     private readonly AppSettings m_settings;
     private readonly HttpClient m_imageHttpClient = new HttpClient();
     private RepositoryProfile m_selectedRepository;
@@ -61,16 +62,18 @@ public sealed class MainWindowViewModel : ViewModelBase
             new LocalRepositoryScanner(),
             new GitHubSocialPreviewService(),
             new OpenAiPostGenerationService(),
+            new ProjectSummaryService(),
             AppSettings.Instance)
     {
     }
 
     internal MainWindowViewModel(
-        ClipboardService clipboardService,
+        IClipboardService clipboardService,
         PromotionScoreService promotionScoreService,
         LocalRepositoryScanner localRepositoryScanner,
         GitHubSocialPreviewService gitHubSocialPreviewService,
         OpenAiPostGenerationService openAiPostGenerationService,
+        ProjectSummaryService projectSummaryService,
         AppSettings settings)
     {
         m_clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
@@ -78,8 +81,10 @@ public sealed class MainWindowViewModel : ViewModelBase
         m_localRepositoryScanner = localRepositoryScanner ?? throw new ArgumentNullException(nameof(localRepositoryScanner));
         m_gitHubSocialPreviewService = gitHubSocialPreviewService ?? throw new ArgumentNullException(nameof(gitHubSocialPreviewService));
         m_openAiPostGenerationService = openAiPostGenerationService ?? throw new ArgumentNullException(nameof(openAiPostGenerationService));
+        m_projectSummaryService = projectSummaryService ?? throw new ArgumentNullException(nameof(projectSummaryService));
         m_settings = settings ?? throw new ArgumentNullException(nameof(settings));
         CopyDraftCommand = new AsyncRelayCommand(_ => CopyDraftAsync());
+        CopyProjectSummaryCommand = new AsyncRelayCommand(_ => CopyProjectSummaryAsync(), _ => Repositories?.Count > 0);
         OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
         CloseSettingsCommand = new RelayCommand(_ => IsSettingsOpen = false);
         SaveSettingsCommand = new AsyncRelayCommand(_ => SaveSettingsAsync());
@@ -99,6 +104,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         foreach (var repository in m_settings.Repositories ?? [])
             Repositories.Add(repository);
         SelectedRepository = Repositories.FirstOrDefault();
+        RaiseRepositoryListCommandCanExecuteChanged();
     }
 
     public ObservableCollection<RepositoryProfile> Repositories { get; }
@@ -272,6 +278,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand CopyDraftCommand { get; }
+    public ICommand CopyProjectSummaryCommand { get; }
     public ICommand OpenSettingsCommand { get; }
     public ICommand CloseSettingsCommand { get; }
     public ICommand SaveSettingsCommand { get; }
@@ -352,6 +359,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 ? "No local repos with GitHub remotes found in that folder."
                 : $"{Repositories.Count} local repos loaded.";
             OnPropertyChanged(nameof(HasRepositories));
+            RaiseRepositoryListCommandCanExecuteChanged();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -394,6 +402,20 @@ public sealed class MainWindowViewModel : ViewModelBase
         SaveRepositoryState();
         await m_clipboardService.CopyTextAsync(DraftText);
         StatusText = "Social preview copied to clipboard.";
+    }
+
+    private async Task CopyProjectSummaryAsync()
+    {
+        if (Repositories.Count == 0)
+        {
+            StatusText = "No repositories loaded to summarise.";
+            return;
+        }
+
+        SaveRepositoryState();
+        var summary = m_projectSummaryService.CreateMarkdownSummary(Repositories, DateTime.UtcNow);
+        await m_clipboardService.CopyTextAsync(summary);
+        StatusText = $"Copied summary for {Repositories.Count} project{(Repositories.Count == 1 ? string.Empty : "s")}.";
     }
 
     private void OpenSettings()
@@ -669,6 +691,11 @@ public sealed class MainWindowViewModel : ViewModelBase
         (GenerateDraftWithInstructionCommand as CommandBase)?.RaiseCanExecuteChanged();
         (MarkSelectedDraftAsUsedCommand as CommandBase)?.RaiseCanExecuteChanged();
         (OpenSelectedRepositoryCommand as CommandBase)?.RaiseCanExecuteChanged();
+    }
+
+    private void RaiseRepositoryListCommandCanExecuteChanged()
+    {
+        (CopyProjectSummaryCommand as CommandBase)?.RaiseCanExecuteChanged();
     }
 
     private async Task<byte[]> LoadImageBytesAsync(string imageLocation)

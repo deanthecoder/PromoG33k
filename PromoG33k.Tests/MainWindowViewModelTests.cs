@@ -33,6 +33,7 @@ public sealed class MainWindowViewModelTests
             new LocalRepositoryScanner(),
             new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
             new OpenAiPostGenerationService(),
+            new ProjectSummaryService(),
             settings);
 
         var canExecuteChangedCount = 0;
@@ -63,6 +64,7 @@ public sealed class MainWindowViewModelTests
             new LocalRepositoryScanner(),
             new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
             new OpenAiPostGenerationService(new HttpClient(handler)),
+            new ProjectSummaryService(),
             settings)
         {
             SettingsOpenAiApiKey = "sk-visible",
@@ -104,6 +106,7 @@ public sealed class MainWindowViewModelTests
             new LocalRepositoryScanner(),
             new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
             new OpenAiPostGenerationService(),
+            new ProjectSummaryService(),
             settings);
         viewModel.SelectedRepository = selectedRepository;
 
@@ -111,6 +114,51 @@ public sealed class MainWindowViewModelTests
 
         Assert.That(viewModel.Repositories.Select(repository => repository.Name).ToArray(), Is.EqualTo(new[] { "Selected", "LowPriority" }));
         Assert.That(viewModel.SelectedRepository, Is.SameAs(selectedRepository));
+    }
+
+    [Test]
+    public async Task CopyProjectSummaryCommandCopiesMarkdownSummary()
+    {
+        var clipboardService = new CapturingClipboardService();
+        var settings = new AppSettings
+        {
+            Repositories =
+            [
+                new RepositoryProfile
+                {
+                    Name = "PromoG33k",
+                    GitHubUrl = "https://github.com/deanthecoder/PromoG33k",
+                    Description = "A desktop app for tasteful project promotion.",
+                    Language = "C#",
+                    UpdatedAtUtc = new DateTime(2026, 5, 8, 12, 0, 0, DateTimeKind.Utc),
+                    ScreenshotUrls = ["img/PromoG33k.png"],
+                    ReadmeHighlights = ["Generate reviewable social drafts."],
+                    IsAvaloniaProject = true,
+                    IsCrossPlatform = true
+                }
+            ],
+            PromotionHistory = []
+        };
+        var viewModel = new MainWindowViewModel(
+            clipboardService,
+            new PromotionScoreService(),
+            new LocalRepositoryScanner(),
+            new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
+            new OpenAiPostGenerationService(),
+            new ProjectSummaryService(),
+            settings);
+
+        viewModel.CopyProjectSummaryCommand.Execute(null);
+        await clipboardService.TextCopied.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.That(clipboardService.Text, Does.StartWith("# Local project summary"));
+        Assert.That(clipboardService.Text, Does.Contain("## PromoG33k"));
+        Assert.That(clipboardService.Text, Does.Contain("GitHub: https://github.com/deanthecoder/PromoG33k"));
+        Assert.That(clipboardService.Text, Does.Not.Contain("Language: C#"));
+        Assert.That(clipboardService.Text, Does.Not.Contain("Updated: 2026-05-08"));
+        Assert.That(clipboardService.Text, Does.Contain("- Avalonia project"));
+        Assert.That(clipboardService.Text, Does.Contain("- Generate reviewable social drafts."));
+        Assert.That(viewModel.StatusText, Is.EqualTo("Copied summary for 1 project."));
     }
 
     private sealed class CapturingHttpMessageHandler : HttpMessageHandler
@@ -128,6 +176,19 @@ public sealed class MainWindowViewModelTests
             {
                 Content = new StringContent("""{"output_text":"OK"}""")
             };
+        }
+    }
+
+    private sealed class CapturingClipboardService : IClipboardService
+    {
+        public TaskCompletionSource TextCopied { get; } = new();
+        public string Text { get; private set; }
+
+        public Task CopyTextAsync(string text)
+        {
+            Text = text;
+            TextCopied.SetResult();
+            return Task.CompletedTask;
         }
     }
 

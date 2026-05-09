@@ -119,16 +119,32 @@
           <Border Classes="mainGlassPanel"
                   Margin="0,0,18,0">
             <Grid RowDefinitions="Auto,Auto,*">
-              <StackPanel Spacing="4">
-                <TextBlock Classes="mainSectionTitle"
-                           Text="Local repos" />
-                <TextBlock Classes="mainSectionHint"
-                           Text="{Binding StatusText}"
-                           TextWrapping="Wrap" />
-                <ComboBox Margin="0,10,0,0"
-                          ItemsSource="{Binding SortModeLabels}"
-                          SelectedIndex="{Binding SortModeIndex, Mode=TwoWay}" />
-              </StackPanel>
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="mainSectionTitle"
+                             Text="Local repos" />
+                  <TextBlock Classes="mainSectionHint"
+                             Text="{Binding StatusText}"
+                             TextWrapping="Wrap" />
+                  <ComboBox Margin="0,10,0,0"
+                            ItemsSource="{Binding SortModeLabels}"
+                            SelectedIndex="{Binding SortModeIndex, Mode=TwoWay}" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Width="34"
+                        Height="34"
+                        Classes="iconOnly"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Command="{Binding CopyProjectSummaryCommand}"
+                        ToolTip.Tip="Copy project summary">
+                  <materialIcons:MaterialIcon Width="20"
+                                              Height="20"
+                                              Foreground="#7DBFFF"
+                                              Kind="ClipboardTextOutline" />
+                </Button>
+              </Grid>
 
               <ProgressBar Grid.Row="1"
                            Margin="0,14,0,0"

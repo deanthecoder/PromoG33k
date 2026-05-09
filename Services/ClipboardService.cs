@@ -13,13 +13,18 @@ using TextCopy;
 
 namespace PromoG33k.Services;
 
+public interface IClipboardService
+{
+    Task CopyTextAsync(string text);
+}
+
 /// <summary>
 /// Cross-platform clipboard helper for generated post text.
 /// </summary>
 /// <remarks>
 /// Keeping clipboard access behind a service lets the UI later support screenshots without changing view models.
 /// </remarks>
-public sealed class ClipboardService
+public sealed class ClipboardService : IClipboardService
 {
     public Task CopyTextAsync(string text)
     {
