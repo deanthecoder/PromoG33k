@@ -20,5 +20,6 @@ public enum RepositorySortMode
 {
     PostPriority,
     Updated,
+    LastUsed,
     Name
 }

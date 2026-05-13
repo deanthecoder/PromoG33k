@@ -103,6 +103,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         SelectedScreenshotPreviews = [];
         foreach (var repository in m_settings.Repositories ?? [])
             Repositories.Add(repository);
+        RefreshLastPromotedDates();
         SelectedRepository = Repositories.FirstOrDefault();
         RaiseRepositoryListCommandCanExecuteChanged();
     }
@@ -216,7 +217,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public bool HasRepositories => Repositories.Count > 0;
     public bool HasSelectedRepository => SelectedRepository != null;
-    public string[] SortModeLabels { get; } = ["Post priority", "Update date", "Name"];
+    public string[] SortModeLabels { get; } = ["Post priority", "Update date", "Last used", "Name"];
 
     public int SortModeIndex
     {
@@ -350,6 +351,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 }
                 Repositories.Add(repository);
             }
+            RefreshLastPromotedDates();
             ApplyRepositorySort();
 
             m_settings.Repositories = Repositories.ToList();
@@ -559,7 +561,9 @@ public sealed class MainWindowViewModel : ViewModelBase
                 UsedAtUtc = now,
                 Text = DraftText ?? string.Empty
             });
+        SelectedRepository.LastPromotedAtUtc = now;
         SaveRepositoryState();
+        ApplyRepositorySort();
         OnPropertyChanged(nameof(SelectedRepositoryUsedText));
         OnPropertyChanged(nameof(HasSelectedRepositoryUsedText));
         OnPropertyChanged(nameof(IsSelectedRepositoryDraftUsed));
@@ -608,6 +612,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     private void ApplyRepositorySort()
     {
         var selectedName = SelectedRepository?.Name;
+        RefreshLastPromotedDates();
         var sorted = GetSortedRepositories().ToArray();
         Repositories.Clear();
         foreach (var repository in sorted)
@@ -638,11 +643,31 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             RepositorySortMode.Name => Repositories.OrderBy(repository => repository.Name),
             RepositorySortMode.Updated => Repositories.OrderByDescending(repository => repository.UpdatedAtUtc).ThenBy(repository => repository.Name),
+            RepositorySortMode.LastUsed => Repositories
+                .OrderByDescending(repository => repository.LastPromotedAtUtc.HasValue)
+                .ThenByDescending(repository => repository.LastPromotedAtUtc)
+                .ThenBy(repository => repository.Name),
             _ => Repositories
                 .OrderBy(repository => GetPrioritySortRank(repository.Priority))
                 .ThenByDescending(repository => m_promotionScoreService.CalculateScore(repository, m_settings.PromotionHistory ?? [], DateTime.UtcNow))
                 .ThenBy(repository => repository.Name)
         };
+    }
+
+    private void RefreshLastPromotedDates()
+    {
+        var lastPromotedByRepository = (m_settings.PromotionHistory ?? [])
+            .Where(entry => entry.UsedAtUtc.HasValue)
+            .GroupBy(entry => entry.RepositoryName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Max(entry => entry.UsedAtUtc),
+                StringComparer.OrdinalIgnoreCase);
+
+        foreach (var repository in Repositories)
+            repository.LastPromotedAtUtc = lastPromotedByRepository.TryGetValue(repository.Name, out var lastPromotedAtUtc)
+                ? lastPromotedAtUtc
+                : null;
     }
 
     private static int GetPrioritySortRank(RepositoryPriority priority) =>

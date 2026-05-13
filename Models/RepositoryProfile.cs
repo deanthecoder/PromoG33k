@@ -30,6 +30,7 @@ public sealed class RepositoryProfile
     public string DefaultBranch { get; set; } = string.Empty;
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
+    public DateTime? LastPromotedAtUtc { get; set; }
     public RepositoryPriority Priority { get; set; } = RepositoryPriority.Normal;
     public List<string> ScreenshotUrls { get; set; } = [];
     public List<string> DemoUrls { get; set; } = [];
@@ -94,10 +95,49 @@ public sealed class RepositoryProfile
     public string ShortDescription =>
         Description.Length <= 80 ? Description : $"{Description[..80].TrimEnd()}...";
 
-    public string UpdatedText => UpdatedAtUtc == default ? "Updated date unknown" : $"Updated {UpdatedAtUtc:yyyy-MM-dd}";
+    public string UpdatedText => UpdatedAtUtc == default ? "Updated date unknown" : $"Updated {GetRelativeAgeText(UpdatedAtUtc, DateTime.UtcNow)}";
+
+    public string LastPromotedText => LastPromotedAtUtc.HasValue
+        ? $"Used {GetRelativeAgeText(LastPromotedAtUtc.Value, DateTime.UtcNow)}"
+        : "Never used";
 
     public string ScreenshotSummary =>
         ScreenshotUrls.Count == 0
             ? "No screenshots found yet."
             : $"{ScreenshotUrls.Count} screenshot candidates found.";
+
+    private static string GetRelativeAgeText(DateTime utcDateTime, DateTime utcNow)
+    {
+        var elapsed = utcNow - utcDateTime;
+        if (elapsed < TimeSpan.Zero)
+            elapsed = TimeSpan.Zero;
+
+        if (elapsed.TotalMinutes < 1)
+            return "just now";
+        if (elapsed.TotalHours < 1)
+            return $"{Math.Max(1, (int)elapsed.TotalMinutes)} minutes ago";
+        if (elapsed.TotalDays < 1)
+        {
+            var hours = Math.Max(1, (int)elapsed.TotalHours);
+            return hours == 1 ? "1 hour ago" : $"{hours} hours ago";
+        }
+        if (elapsed.TotalDays < 14)
+        {
+            var days = Math.Max(1, (int)elapsed.TotalDays);
+            return days == 1 ? "1 day ago" : $"{days} days ago";
+        }
+        if (elapsed.TotalDays < 60)
+        {
+            var weeks = Math.Max(1, (int)(elapsed.TotalDays / 7));
+            return weeks == 1 ? "1 week ago" : $"{weeks} weeks ago";
+        }
+        if (elapsed.TotalDays < 730)
+        {
+            var months = Math.Max(1, (int)(elapsed.TotalDays / 30));
+            return months == 1 ? "1 month ago" : $"{months} months ago";
+        }
+
+        var years = Math.Max(1, (int)(elapsed.TotalDays / 365));
+        return years == 1 ? "1 year ago" : $"{years} years ago";
+    }
 }

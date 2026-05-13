@@ -117,6 +117,50 @@ public sealed class MainWindowViewModelTests
     }
 
     [Test]
+    public void LastUsedSortShowsMostRecentlyUsedRepositoriesFirst()
+    {
+        var olderRepository = new RepositoryProfile
+        {
+            Name = "Older",
+            GitHubUrl = "https://github.com/example/Older"
+        };
+        var newerRepository = new RepositoryProfile
+        {
+            Name = "Newer",
+            GitHubUrl = "https://github.com/example/Newer"
+        };
+        var neverUsedRepository = new RepositoryProfile
+        {
+            Name = "Never",
+            GitHubUrl = "https://github.com/example/Never"
+        };
+        var now = DateTime.UtcNow;
+        var settings = new AppSettings
+        {
+            Repositories = [olderRepository, neverUsedRepository, newerRepository],
+            PromotionHistory =
+            [
+                new PromotionHistoryEntry { RepositoryName = "Older", UsedAtUtc = now.AddDays(-8) },
+                new PromotionHistoryEntry { RepositoryName = "Newer", UsedAtUtc = now.AddDays(-2) }
+            ]
+        };
+        var viewModel = new MainWindowViewModel(
+            new ClipboardService(),
+            new PromotionScoreService(),
+            new LocalRepositoryScanner(),
+            new GitHubSocialPreviewService(new HttpClient(new StaticHtmlHandler())),
+            new OpenAiPostGenerationService(),
+            new ProjectSummaryService(),
+            settings);
+
+        viewModel.SortModeIndex = 2;
+
+        Assert.That(viewModel.Repositories.Select(repository => repository.Name).ToArray(), Is.EqualTo(new[] { "Newer", "Older", "Never" }));
+        Assert.That(newerRepository.LastPromotedText, Does.StartWith("Used 2 days ago").Or.StartWith("Used 1 day ago"));
+        Assert.That(neverUsedRepository.LastPromotedText, Is.EqualTo("Never used"));
+    }
+
+    [Test]
     public async Task CopyProjectSummaryCommandCopiesMarkdownSummary()
     {
         var clipboardService = new CapturingClipboardService();

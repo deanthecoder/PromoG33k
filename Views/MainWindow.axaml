@@ -193,10 +193,17 @@
                                  Foreground="#B4C5D8"
                                  Text="{Binding ShortDescription}"
                                  TextWrapping="Wrap" />
-                      <TextBlock Grid.Row="2"
-                                 Foreground="#8298B5"
-                                 FontSize="12"
-                                 Text="{Binding UpdatedText}" />
+                      <Grid Grid.Row="2"
+                            ColumnDefinitions="*,Auto">
+                        <TextBlock Foreground="#8298B5"
+                                   FontSize="12"
+                                   Text="{Binding UpdatedText}" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="8,0,0,0"
+                                   Foreground="#95B8A2"
+                                   FontSize="12"
+                                   Text="{Binding LastPromotedText}" />
+                      </Grid>
                     </Grid>
                   </DataTemplate>
                 </ListBox.ItemTemplate>
